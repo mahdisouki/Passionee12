@@ -34,6 +34,7 @@ router.post('/register', async (req, res) => {
 
         res.json({ message: 'OTP sent. Please verify.' });
     } catch (error) {
+        console.log(error)
         res.status(500).json({ message: error });
     }
 });
@@ -62,7 +63,7 @@ router.post('/verify-otp', async (req, res) => {
 // Login with Password
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
-    
+    console.log(req.body)
     try {
         const user = await User.findOne({ username });
         if (!user) return res.status(400).json({ message: 'User not found' });
@@ -73,6 +74,7 @@ router.post('/login', async (req, res) => {
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.json({ token, user });
     } catch (error) {
+        console.log(error)
         res.status(500).json({ message: 'Server error' });
     }
 });
