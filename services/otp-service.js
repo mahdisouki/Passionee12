@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-const generateOTP = () => otpGenerator.generate(4, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets: false });
+const generateOTP = () => otpGenerator.generate(4, { upperCaseAlphabets: false, specialChars: false, lowerCaseAlphabets: false , digits:true });
 const sendEmailOTP = async (email, otp) => {
     const mailOptions = {
         from: process.env.EMAIL_USER,
