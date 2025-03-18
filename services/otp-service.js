@@ -25,11 +25,16 @@ const sendEmailOTP = async (email, otp) => {
 };
 
 const sendSMSOTP = async (phone, otp) => {
-    await twilioClient.messages.create({
-        body: `Your OTP code is: ${otp}`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: phone
-    });
+    try {
+        await twilioClient.messages.create({
+            body: `Your OTP code is: ${otp}`,
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: phone
+        }); 
+    } catch (error) {
+        console.log(error)
+    }
+    
 };
 
 module.exports = { generateOTP, sendEmailOTP, sendSMSOTP };
