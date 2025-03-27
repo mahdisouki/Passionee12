@@ -22,11 +22,12 @@ require("./shared/db");
 
 const authRoutes = require('./routes/auth/authRoutes');
 const teamRoutes = require('./routes/match/teamRoute');
-const playerRoutes = require('./routes/match/playerRoute')
+const playerRoutes = require('./routes/match/playerRoute');
+const fixtureRoutes = require('./routes/match/fixtureRoute')
 app.use('/auth', authRoutes);
 app.use('/team', teamRoutes);
 app.use('/player', playerRoutes);
-
+app.use('/fixture' ,fixtureRoutes )
 
 setupSwagger(app); // Initialize Swagger documentation
 
