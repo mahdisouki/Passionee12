@@ -1,5 +1,5 @@
 const fixtureModel = require("../../models/match/Fixture.model");
-const fixtureService = require("../../services/match/fixtureService");
+const fixtureService = require("../../services/fixtureService");
 const crypto = require('crypto');
 
 const generateRandomKey = (length) => crypto.randomBytes(length).toString('hex');
@@ -28,8 +28,8 @@ const fixtureCtrl = {
   getAllFixtureByRoundName: async (req, res) => {
     try {
       const round = req.params.roundName;
-      const fixtures = await fixtureModel.find({ round }).sort({ round: 1 });
-      res.json({ data: fixtures, status: "success" });
+      const fixture = await fixtureService.getAllFixtureByRoundName(round);
+      res.json({ data: fixture, status: "success round" + round });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -37,10 +37,9 @@ const fixtureCtrl = {
 
   getLastCurrentRound: async (req, res) => {
     try {
-      const fixture = await fixtureModel
-        .findOne({ statusshort: { $nin: ['NS', 'TBD', 'PST', 'FT'] } })
-        .sort({ date: -1 });
-      res.json({ data: fixture.round, date: fixture.date, status: "success" });
+      const fixture = await fixtureService.getLastCurrentRound();
+      console.log(fixture)
+      res.json({ data: fixture.round, date: fixture.date, status: "success last round" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -48,17 +47,8 @@ const fixtureCtrl = {
 
   getNextRound: async (req, res) => {
     try {
-      const current = await fixtureModel
-        .findOne({ statusshort: { $nin: ['NS', 'TBD', 'PST', 'FT'] } })
-        .sort({ date: -1 });
-
-      if (!current) return res.status(404).json({ message: "No current round found" });
-
-      const next = await fixtureModel
-        .findOne({ round: { $gt: current.round } })
-        .sort({ date: 1 });
-
-      res.json({ data: next?.round, date: next?.date, status: "success" });
+      const fixture = await fixtureService.getNextRound();
+      res.json({ data: fixture.round, date: fixture.date, status: "success last round" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -150,15 +140,8 @@ const fixtureCtrl = {
 
   getNearestMatchForTeam: async (req, res) => {
     try {
-      const teamId = req.params.teamId;
-      const fixtures = await fixtureModel.find({ statusshort: 'NS' }).sort({ date: 1 });
-
-      const match = fixtures.find(match =>
-        match.teamshome.id?.toString() === teamId ||
-        match.teamsaway.id?.toString() === teamId
-      );
-
-      res.json({ data: match, status: "success" });
+      const fixture = await fixtureService.getNearestMatchForTeam(req.params.teamId);
+      res.json({ data: fixture, status: "success last round" });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

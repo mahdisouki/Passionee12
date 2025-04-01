@@ -1,6 +1,6 @@
 const fixtureModel = require("../models/match/Fixture.model");
 const pickteamModel = require("../models/match/Pickteams.model");
-const userpointsModel = require("../../models/points/userPointsModel");
+const userpointsModel = require("../models/points/userPointsModel");
 const lineupModel = require("../models/match/lineupModels");
 const userModel = require("../models/User/User.model");
 const ptsattribModel = require("../models/points/pointsattributionModel");

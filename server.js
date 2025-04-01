@@ -24,11 +24,12 @@ const authRoutes = require('./routes/auth/authRoutes');
 const teamRoutes = require('./routes/match/teamRoute');
 const playerRoutes = require('./routes/match/playerRoute');
 const fixtureRoutes = require('./routes/match/fixtureRoute')
+const pickteamRoutes = require('./routes/match/pickteamRoute')
 app.use('/auth', authRoutes);
 app.use('/team', teamRoutes);
 app.use('/player', playerRoutes);
-app.use('/fixture' ,fixtureRoutes )
-
+app.use('/fixture' ,fixtureRoutes);
+app.use('/pickteam' , pickteamRoutes);
 setupSwagger(app); // Initialize Swagger documentation
 
 app.listen(5000, () => console.log('Server running on port 5000'));
