@@ -1,5 +1,5 @@
 const Quiz = require('../../models/utils/quizModels');
-const { deleteObject } = require('../../shared/s3');
+// const { deleteObject } = require('../../shared/s3');
 
 const quizCtrl = {
   // Create a new quiz
@@ -19,18 +19,32 @@ const quizCtrl = {
       const { page = '1', limit = '10', search = '' } = req.query;
       const pageNum = parseInt(page, 10);
       const limitNum = parseInt(limit, 10);
-
+  
       let query = Quiz.find();
       if (search) {
         query = query.find({ title: { $regex: search, $options: 'i' } });
       }
-
+  
       const total = await Quiz.countDocuments(query);
-      const quizzes = await query.skip((pageNum - 1) * limitNum).limit(limitNum).exec();
-
+      const quizzes = await query
+        .skip((pageNum - 1) * limitNum)
+        .limit(limitNum)
+        .lean()
+        .exec();
+  
+      // Shuffle questions for each quiz
+      const shuffledQuizzes = quizzes.map(quiz => {
+        const shuffledQuestions = [...quiz.questions];
+        for (let i = shuffledQuestions.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffledQuestions[i], shuffledQuestions[j]] = [shuffledQuestions[j], shuffledQuestions[i]];
+        }
+        return { ...quiz, questions: shuffledQuestions };
+      });
+  
       res.status(200).json({
         message: 'Quizzes fetched successfully',
-        quizzes,
+        quizzes: shuffledQuizzes,
         meta: {
           currentPage: pageNum,
           limit: limitNum,
@@ -42,6 +56,7 @@ const quizCtrl = {
       res.status(500).json({ message: 'Error fetching quizzes', error: error.message });
     }
   },
+  
 
   // Get a quiz by ID
   getQuizById: async (req, res) => {
@@ -86,9 +101,9 @@ const quizCtrl = {
       }
 
       const questionToDelete = quiz.questions.find(q => q._id.toString() === questionId);
-      if (questionToDelete?.image) {
-        await deleteObject(questionToDelete.image);
-      }
+      // if (questionToDelete?.image) {
+      //   await deleteObject(questionToDelete.image);
+      // }
 
       const updatedQuiz = await Quiz.findByIdAndUpdate(
         quizId,

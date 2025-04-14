@@ -16,30 +16,17 @@ const pickteamSchema = new Schema({
   players: [
     {
       rowIndex: Number,
+      columnIndex:Number,
       player: {
         type: Schema.Types.ObjectId,
         ref: 'Player',
         required: true
       },
-      isStarting: {
-        type: Boolean,
-        default: false
-      },
       isSubstituted: {
         type: Boolean,
         default: false
       },
-      availabilityStatus: {
-        type: String,
-        enum: ['available', 'willNotPlay', 'uncertain'],
-        default: 'available'
-      },
-      availabilityReason: {
-        type: String,
-        required: function () {
-          return this.availabilityStatus !== 'available';
-        }
-      },
+      
       captain: {
         type: Boolean,
         default: false
@@ -48,18 +35,7 @@ const pickteamSchema = new Schema({
         type: Boolean,
         default: false
       },
-      mvp: {
-        type: Boolean,
-        default: false
-      },
-      isInjured: {
-        type: Boolean,
-        default: false
-      },
-      redCard: {
-        type: Boolean,
-        default: false
-      }
+     
     }
   ],
 

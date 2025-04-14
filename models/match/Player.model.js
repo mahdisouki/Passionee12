@@ -55,6 +55,29 @@ const PlayerSchema = new Schema({
         round: String,
         total: Number,
     }],
+    availabilityStatus: {
+        type: String,
+        enum: ['available', 'willNotPlay', 'uncertain'],
+        default: 'available'
+      },
+      availabilityReason: {
+        type: String,
+        required: function () {
+          return this.availabilityStatus !== 'available';
+        }
+      },
+      mvp: {
+        type: Boolean,
+        default: false
+      },
+      isInjured: {
+        type: Boolean,
+        default: false
+      },
+      redCard: {
+        type: Boolean,
+        default: false
+      }
 },
     { versionKey: false });
 

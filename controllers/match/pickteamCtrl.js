@@ -1,5 +1,6 @@
 const pickteamModel = require("../../models/match/Pickteams.model");
 const Player = require("../../models/match/Player.model");
+const mongoose = require('mongoose');
 
 const pickteamCtrl = {
   
@@ -49,48 +50,57 @@ const pickteamCtrl = {
   transferPlayer: async (req, res) => {
     const { userId } = req.params;
     const { playerToBeTransfert, newPlayerId } = req.body;
+  
     try {
       const newPlayer = await Player.findById(newPlayerId);
-      const pick = await pickteamModel.findOne({ userId });
-      const oldPlayerData = pick.players.find(p => p.player.toString() === playerToBeTransfert);
-
-      await pickteamModel.updateOne(
-        { userId },
-        {
-          $push: {
-            playerTransfert: [
-              { player: playerToBeTransfert, transferType: "out" },
-              { player: newPlayerId, transferType: "in" },
-            ]
-          },
-          $pull: {
-            players: { player: playerToBeTransfert }
-          }
-        }
+      if (!newPlayer) {
+        return res.status(404).json({ message: 'New player not found' });
+      }
+  
+      // Get pickteam and populate players
+      const pick = await pickteamModel.findOne({ userId }).populate("players.player");
+      if (!pick) {
+        return res.status(404).json({ message: 'Pickteam not found for user' });
+      }
+  
+      // Ensure old player is inside the team
+      const oldPlayerData = pick.players.find(p =>
+        p.player && p.player._id && p.player._id.equals(playerToBeTransfert)
       );
+  
+      if (!oldPlayerData) {
+        return res.status(400).json({ message: 'Player to transfer out is not in the user\'s pickteam' });
+      }
+  
+      // Check position match
+      if (newPlayer.position !== oldPlayerData.player.position) {
+        return res.status(400).json({ message: 'Position mismatch between incoming and outgoing player' });
+      }
+  
+//  Step 1: Remove player manually
+pick.players = pick.players.filter(p => p.player._id.toString() !== playerToBeTransfert);
 
-      await pickteamModel.updateOne(
-        { userId },
-        {
-          $push: {
-            players: {
-              player: newPlayerId,
-              transfert: true,
-              position: newPlayer.position,
-              rowIndex: oldPlayerData.rowIndex,
-              isSubstituted: oldPlayerData.isSubstituted,
-            }
-          }
-        }
-      );
+//  Step 2: Add the new player
+pick.players.push({
+  player: newPlayerId,
+  transfert: true,
+  rowIndex: oldPlayerData.rowIndex,
+  isSubstituted: oldPlayerData.isSubstituted,
+  captain: false,
+  vicecaptain: false
+});
 
-      res.status(200).json({ message: "Player transferred successfully" });
+//  Step 3: Track transfer
+pick.playerTransfert.push({ player: playerToBeTransfert, transferType: 'out' });
+pick.playerTransfert.push({ player: newPlayerId, transferType: 'in' });
+  //  Step 4: Save manually
+      await pick.save();
+      res.status(200).json({ message: "Player transferred successfully", data:pick });
     } catch (error) {
       res.status(500).json({ message: 'Error transferring player', error: error.message });
     }
   },
-
-  
+   
   makeCaptain: async (req, res) => {
     const { userId } = req.params;
     const { playerId, round } = req.body;
@@ -132,6 +142,48 @@ const pickteamCtrl = {
       res.status(500).json({ message: 'Error updating vice-captain', error: error.message });
     }
   },
+  swapPlayersWithinPickteam: async (req, res) => {
+    const { userId } = req.params;
+    const { playerAId, playerBId, round } = req.body;
+  
+    try {
+      const pickteam = await pickteamModel.findOne({ userId, round })
+        .populate("players.player");
+  
+      if (!pickteam) {
+        return res.status(404).json({ message: "Pickteam not found" });
+      }
+  
+      const playerA = pickteam.players.find(p => p.player._id.toString() === playerAId);
+      const playerB = pickteam.players.find(p => p.player._id.toString() === playerBId);
+  
+      if (!playerA || !playerB) {
+        return res.status(400).json({ message: "One or both players not found in pickteam" });
+      }
+  
+      // Check if positions match
+      if (playerA.player.position !== playerB.player.position) {
+        return res.status(400).json({ message: "Players must be in the same position to swap" });
+      }
+  
+      // Swap rowIndex and isSubstituted
+      const tempRowIndex = playerA.rowIndex;
+      const tempIsSub = playerA.isSubstituted;
+  
+      playerA.rowIndex = playerB.rowIndex;
+      playerA.isSubstituted = playerB.isSubstituted;
+  
+      playerB.rowIndex = tempRowIndex;
+      playerB.isSubstituted = tempIsSub;
+  
+      await pickteam.save();
+  
+      res.status(200).json({ message: "Players swapped successfully", data: pickteam });
+    } catch (error) {
+      res.status(500).json({ message: 'Error swapping players', error: error.message });
+    }
+  }  
+  
 };
 
 module.exports = pickteamCtrl;

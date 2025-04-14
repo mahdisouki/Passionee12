@@ -109,7 +109,7 @@ router.delete("/:userId", pickteamCtrl.deletePickteamById);
  *         description: Player transferred successfully
  */
 router.put("/transfer/:userId", pickteamCtrl.transferPlayer);
-
+router.put('/swap/:userId' , pickteamCtrl.swapPlayersWithinPickteam)
 /**
  * @swagger
  * /pickteam/captain/{userId}:
