@@ -8,14 +8,15 @@ const teamCtrl = {
       await newTeam.save();
       res.status(201).json({ message: 'Team created successfully', team: newTeam });
     } catch (error) {
-      res.status(500).json({ message: 'Error creating team', error: error.message });
+      console.log(error)
+      res.status(500).json({ message: 'Error creating team', error: error });
     }
   },
 
   // Get all teams with pagination and search
   getAllTeams: async (req, res) => {
     try {
-      const { page = '1', limit = '10', search = '' } = req.query;
+      const { page = '1', limit = '100', search = '' } = req.query;
       const pageNum = parseInt(page, 10);
       const limitNum = parseInt(limit, 10);
 

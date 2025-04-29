@@ -41,17 +41,36 @@ const pickteamSchema = new Schema({
 
   playerTransfert: [
     {
-      player: {
+      playerIn: {
         type: Schema.Types.ObjectId,
         ref: 'Player',
         required: true
       },
-      transferType: {
-        type: String,
-        enum: ['in', 'out'],
+    
+      playerOut: {
+        type: Schema.Types.ObjectId,
+        ref: 'Player',
         required: true
       }
-    }
+    },
+    
+  ], 
+  
+  playerReplace: [
+    {
+      playerIn: {
+        type: Schema.Types.ObjectId,
+        ref: 'Player',
+        required: true
+      },
+    
+      playerOut: {
+        type: Schema.Types.ObjectId,
+        ref: 'Player',
+        required: true
+      }
+    },
+    
   ]
 }, { versionKey: false });
 

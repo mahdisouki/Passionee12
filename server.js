@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 const corsOptions = {
-    origin: ['*' , 'http://localhost:51035'], 
+    origin: ['*' , 'http://localhost:5173'], 
     optionsSuccessStatus: 200 
   };
 app.use(cors(corsOptions))
@@ -28,7 +28,7 @@ const pickteamRoutes = require('./routes/match/pickteamRoute');
 const quizRoutes = require('./routes/quiz/quizRoute');
 const quizUserAnswerRoutes = require('./routes/quiz/quizUserAnswerRoute');
 const blogRoutes = require('./routes/blog/blogRoutes')
-
+const sidebarRoutes = require('./routes/sidebar/sidebarRoute');
   
 app.use('/auth', authRoutes);
 app.use('/team', teamRoutes);
@@ -37,7 +37,8 @@ app.use('/fixture' ,fixtureRoutes);
 app.use('/pickteam' , pickteamRoutes);
 app.use('/quiz', quizRoutes);
 app.use('/user-answer',quizUserAnswerRoutes)
-app.use('/blogs',blogRoutes)
+app.use('/blogs',blogRoutes);
+app.use('/sidebar', sidebarRoutes);
 
 setupSwagger(app); // Initialize Swagger documentation
 
