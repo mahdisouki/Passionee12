@@ -1,12 +1,22 @@
 const Player = require("../../models/match/Player.model");
 const fs = require("fs");
 
+const calculateSelectedBy = async (playerId) => {
+    const totalPickteams = await Pickteam.countDocuments(); // Total number of teams in the competition
+    const selectedPickteams = await Pickteam.countDocuments({ 'players.player': playerId }); // Teams that selected this player
+    return totalPickteams > 0 ? ((selectedPickteams / totalPickteams) * 100).toFixed(1) : 0;
+};
 const playerCtrl = {
     // Get all players
     getAllPlayers: async (req, res) => {
         try {
             const players = await Player.find();
-            res.json({ data: players, status: "success" });
+            const playersWithSelectedBy = await Promise.all(players.map(async (player) => {
+                const selectedBy = await calculateSelectedBy(player._id);
+                return { ...player._doc, selectedBy: `${selectedBy}%` }; // Add selectedBy field to each player
+            }));
+
+            res.json({ data: playersWithSelectedBy, status: "success" });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -16,8 +26,13 @@ const playerCtrl = {
     getAllPlayersByTeamId: async (req, res) => {
         try {
             const teamId = req.params.id;
-            const players = await Player.find({ team: teamId });
-            res.json({ data: players, status: "success", teamId });
+            const players = await Player.find({ 'team._id': teamId });
+            const playersWithSelectedBy = await Promise.all(players.map(async (player) => {
+                const selectedBy = await calculateSelectedBy(player._id);
+                return { ...player._doc, selectedBy: `${selectedBy}%` };
+            }));
+
+            res.json({ data: playersWithSelectedBy, status: "success", teamId });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -28,7 +43,12 @@ const playerCtrl = {
         try {
             const position = req.params.position;
             const players = await Player.find({ position });
-            res.json({ data: players, status: "success", position });
+            const playersWithSelectedBy = await Promise.all(players.map(async (player) => {
+                const selectedBy = await calculateSelectedBy(player._id);
+                return { ...player._doc, selectedBy: `${selectedBy}%` };
+            }));
+
+            res.json({ data: playersWithSelectedBy, status: "success", position });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -42,7 +62,13 @@ const playerCtrl = {
             if (players.length === 0) {
                 return res.status(404).json({ error: `No players found with the name: ${name}` });
             }
-            res.json({ data: players, status: "success", name });
+
+            const playersWithSelectedBy = await Promise.all(players.map(async (player) => {
+                const selectedBy = await calculateSelectedBy(player._id);
+                return { ...player._doc, selectedBy: `${selectedBy}%` };
+            }));
+
+            res.json({ data: playersWithSelectedBy, status: "success", name });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -55,7 +81,11 @@ const playerCtrl = {
             if (!player) {
                 return res.status(404).json({ error: "Player not found" });
             }
-            res.json({ data: player, status: "success", playerId: req.params.id });
+
+            // Calculate selectedBy percentage
+            const selectedBy = await calculateSelectedBy(player._id);
+
+            res.json({ data: { ...player._doc, selectedBy: `${selectedBy}%` }, status: "success", playerId: req.params.id });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
