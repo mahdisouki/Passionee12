@@ -147,4 +147,33 @@ PlayerSchema.statics.isOwnedByUser = async function(playerId, userId, round) {
     });
 };
 
+// Static method to update player value based on selection count
+PlayerSchema.statics.updatePlayerValue = async function(playerId) {
+    const Pickteam = mongoose.model('Pickteam');
+    const totalTeams = await Pickteam.countDocuments();
+    const selectedCount = await Pickteam.countDocuments({ 'players.player': playerId });
+    
+    const player = await this.findById(playerId);
+    if (!player) return null;
+
+    // Price adjustment logic
+    if (selectedCount > 400) {
+        player.value_passionne += 0.1;
+    } else if (selectedCount < 200) {
+        player.value_passionne = Math.max(3, player.value_passionne - 0.1);
+    }
+
+    await player.save();
+    return player;
+};
+
+// Static method to get player selection percentage
+PlayerSchema.statics.getSelectionPercentage = async function(playerId) {
+    const Pickteam = mongoose.model('Pickteam');
+    const totalTeams = await Pickteam.countDocuments();
+    const selectedCount = await Pickteam.countDocuments({ 'players.player': playerId });
+    
+    return totalTeams > 0 ? ((selectedCount / totalTeams) * 100).toFixed(1) : 0;
+};
+
 module.exports = mongoose.model('Player', PlayerSchema);

@@ -1,5 +1,6 @@
 const Player = require("../../models/match/Player.model");
 const fs = require("fs");
+const { deleteObject } = require('../../config/aws.config');
 
 const calculateSelectedBy = async (playerId) => {
     const totalPickteams = await Pickteam.countDocuments(); // Total number of teams in the competition
@@ -10,7 +11,7 @@ const playerCtrl = {
     // Get all players
     getAllPlayers: async (req, res) => {
         try {
-            const players = await Player.find();
+            const players = await Player.find().populate('team');
             const playersWithSelectedBy = await Promise.all(players.map(async (player) => {
                 const selectedBy = await calculateSelectedBy(player._id);
                 return { ...player._doc, selectedBy: `${selectedBy}%` }; // Add selectedBy field to each player
@@ -77,7 +78,7 @@ const playerCtrl = {
     // Get a player by ID
     getPlayerById: async (req, res) => {
         try {
-            const player = await Player.findById(req.params.id);
+            const player = await Player.findById(req.params.id).populate('team');
             if (!player) {
                 return res.status(404).json({ error: "Player not found" });
             }
@@ -94,11 +95,11 @@ const playerCtrl = {
     // Create a new player
     createPlayer: async (req, res) => {
         try {
-            const newPlayer = new Player(req.body);
-            await newPlayer.save();
-            res.status(201).json({ data: newPlayer, status: "success" });
+            const player = new Player(req.body);
+            await player.save();
+            res.status(201).json({ data: player, status: "success" });
         } catch (err) {
-            res.status(500).json({ error: err.message, status: "error" });
+            res.status(500).json({ error: err.message });
         }
     },
 
@@ -123,14 +124,13 @@ const playerCtrl = {
                 return res.status(404).json({ error: "Player not found" });
             }
 
-            // Delete player logo if exists
+            // Delete player logo from S3 if exists
             if (player.logo) {
-                const logoFilePath = `${player.logo}`;
-                fs.unlink(logoFilePath, (err) => {
-                    if (err) {
-                        console.error("Error deleting player photo file:", err);
-                    }
-                });
+                try {
+                    await deleteObject(player.logo);
+                } catch (err) {
+                    console.error("Error deleting player photo from S3:", err);
+                }
             }
             res.json({ data: player, status: "success" });
         } catch (err) {

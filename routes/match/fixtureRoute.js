@@ -13,11 +13,64 @@ const fixtureController = require('../../controllers/match/fixtureCtrl');
  * @swagger
  * /fixtures:
  *   get:
- *     summary: Get all fixtures
+ *     summary: Get all fixtures with optional filters
  *     tags: [Fixtures]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [played, upcoming, live, postponed]
+ *         description: Filter fixtures by status
+ *       - in: query
+ *         name: round
+ *         schema:
+ *           type: string
+ *         description: Filter fixtures by round name
+ *       - in: query
+ *         name: teamId
+ *         schema:
+ *           type: string
+ *         description: Filter fixtures by team ID
+ *       - in: query
+ *         name: dateFrom
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter fixtures from this date
+ *       - in: query
+ *         name: dateTo
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Filter fixtures until this date
  *     responses:
  *       200:
- *         description: List of fixtures
+ *         description: List of filtered fixtures
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Fixture'
+ *                 status:
+ *                   type: string
+ *                 filters:
+ *                   type: object
+ *                   properties:
+ *                     status:
+ *                       type: string
+ *                     round:
+ *                       type: string
+ *                     teamId:
+ *                       type: string
+ *                     dateFrom:
+ *                       type: string
+ *                     dateTo:
+ *                       type: string
  *       500:
  *         description: Server error
  */

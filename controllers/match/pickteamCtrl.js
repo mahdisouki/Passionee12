@@ -6,6 +6,14 @@ const pickteamCtrl = {
   
   createPickteam: async (req, res) => {
     try {
+      const validationErrors = await validateTeamCreation(req.body);
+      if (validationErrors.length > 0) {
+        return res.status(400).json({ 
+          message: 'Team creation validation failed', 
+          errors: validationErrors 
+        });
+      }
+
       const newPickteam = new pickteamModel(req.body);
       await newPickteam.save();
       res.status(201).json({ message: 'Pickteam created successfully', pickteam: newPickteam });
@@ -184,6 +192,47 @@ pick.playerTransfert.push({ player: newPlayerId, transferType: 'in' });
     }
   }  
   
+};
+
+const validateTeamCreation = async (pickteam) => {
+  const errors = [];
+  
+  // Check total VP budget
+  const totalVP = pickteam.players.reduce((sum, p) => sum + p.player.value_passionne, 0);
+  if (totalVP > 100) {
+    errors.push('Total VP cannot exceed 100');
+  }
+
+  // Check position limits
+  const positionCounts = {
+    'Goalkeeper': 0,
+    'Defender': 0,
+    'Midfielder': 0,
+    'Attacker': 0
+  };
+
+  // Count players by position
+  pickteam.players.forEach(p => {
+    positionCounts[p.player.position]++;
+  });
+
+  // Validate position limits
+  if (positionCounts['Goalkeeper'] > 2) errors.push('Maximum 2 goalkeepers allowed');
+  if (positionCounts['Defender'] > 5) errors.push('Maximum 5 defenders allowed');
+  if (positionCounts['Midfielder'] > 5) errors.push('Maximum 5 midfielders allowed');
+  if (positionCounts['Attacker'] > 3) errors.push('Maximum 3 attackers allowed');
+
+  // Check club limits
+  const clubCounts = {};
+  pickteam.players.forEach(p => {
+    const clubId = p.player.team._id.toString();
+    clubCounts[clubId] = (clubCounts[clubId] || 0) + 1;
+    if (clubCounts[clubId] > 3) {
+      errors.push(`Maximum 3 players allowed from ${p.player.team.name}`);
+    }
+  });
+
+  return errors;
 };
 
 module.exports = pickteamCtrl;

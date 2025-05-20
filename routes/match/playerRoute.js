@@ -1,7 +1,36 @@
 const express = require('express');
 const router = express.Router();
 const playerController = require('../../controllers/match/playerCtrl');
+const { upload, handleFileUpload, handleFileDeletion } = require('../../middleware/uploadMiddleware');
+const { AuthMiddleware } = require('../../shared/authMiddleware');
 
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Player:
+ *       type: object
+ *       required:
+ *         - name
+ *         - position
+ *         - team
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: Player's full name
+ *         position:
+ *           type: string
+ *           description: Player's position (e.g., Forward, Midfielder, Defender, Goalkeeper)
+ *         team:
+ *           type: string
+ *           description: Reference to the team ID
+ *         logo:
+ *           type: string
+ *           description: URL to player's photo
+ *         selectedBy:
+ *           type: string
+ *           description: Percentage of teams that selected this player
+ */
 
 /**
  * @swagger
@@ -16,32 +45,49 @@ const playerController = require('../../controllers/match/playerCtrl');
  *   post:
  *     summary: Create a new player
  *     tags: [Players]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
+ *             required:
+ *               - name
+ *               - position
+ *               - team
  *             properties:
  *               name:
  *                 type: string
- *                 example: Lionel Messi
- *               age:
- *                 type: integer
- *                 example: 36
- *               team:
- *                 type: string
- *                 example: "65bfbf9098234a001a7e2b99"
+ *                 description: Player's full name
  *               position:
  *                 type: string
- *                 example: "Forward"
+ *                 description: Player's position
+ *               team:
+ *                 type: string
+ *                 description: Team ID
+ *               logo:
+ *                 type: string
+ *                 format: binary
+ *                 description: Player's photo
  *     responses:
  *       201:
  *         description: Player created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Player'
+ *                 status:
+ *                   type: string
+ *                   example: success
  *       500:
  *         description: Server error
  */
-router.post('/', playerController.createPlayer);
+router.post('/', AuthMiddleware, upload.single('logo'), handleFileUpload, playerController.createPlayer);
 
 /**
  * @swagger
@@ -49,9 +95,27 @@ router.post('/', playerController.createPlayer);
  *   get:
  *     summary: Get all players
  *     tags: [Players]
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search players by name
  *     responses:
  *       200:
  *         description: List of players
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Player'
+ *                 status:
+ *                   type: string
+ *                   example: success
  *       500:
  *         description: Server error
  */
@@ -69,10 +133,22 @@ router.get('/', playerController.getAllPlayers);
  *         required: true
  *         schema:
  *           type: string
- *         example: "65bfbf9098234a001a7e2b99"
+ *         description: Player ID
  *     responses:
  *       200:
  *         description: Player details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Player'
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 playerId:
+ *                   type: string
  *       404:
  *         description: Player not found
  *       500:
@@ -86,35 +162,53 @@ router.get('/:id', playerController.getPlayerById);
  *   put:
  *     summary: Update a player
  *     tags: [Players]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         example: "65bfbf9098234a001a7e2b99"
+ *         description: Player ID
  *     requestBody:
- *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
  *               name:
  *                 type: string
- *                 example: Cristiano Ronaldo
- *               age:
- *                 type: integer
- *                 example: 39
+ *                 description: Player's full name
+ *               position:
+ *                 type: string
+ *                 description: Player's position
+ *               team:
+ *                 type: string
+ *                 description: Team ID
+ *               logo:
+ *                 type: string
+ *                 format: binary
+ *                 description: Player's photo
  *     responses:
  *       200:
  *         description: Player updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Player'
+ *                 status:
+ *                   type: string
+ *                   example: success
  *       404:
  *         description: Player not found
  *       500:
  *         description: Server error
  */
-router.put('/:id', playerController.updatePlayer);
+router.put('/:id', AuthMiddleware, upload.single('logo'), handleFileUpload, playerController.updatePlayer);
 
 /**
  * @swagger
@@ -122,22 +216,34 @@ router.put('/:id', playerController.updatePlayer);
  *   delete:
  *     summary: Delete a player
  *     tags: [Players]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: string
- *         example: "65bfbf9098234a001a7e2b99"
+ *         description: Player ID
  *     responses:
  *       200:
  *         description: Player deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Player'
+ *                 status:
+ *                   type: string
+ *                   example: success
  *       404:
  *         description: Player not found
  *       500:
  *         description: Server error
  */
-router.delete('/:id', playerController.deletePlayer);
+router.delete('/:id', AuthMiddleware, handleFileDeletion, playerController.deletePlayer);
 
 /**
  * @swagger
@@ -151,10 +257,24 @@ router.delete('/:id', playerController.deletePlayer);
  *         required: true
  *         schema:
  *           type: string
- *         example: "65bfbf9098234a001a7e2b99"
+ *         description: Team ID
  *     responses:
  *       200:
  *         description: List of players in the team
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Player'
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 teamId:
+ *                   type: string
  *       500:
  *         description: Server error
  */
@@ -172,10 +292,24 @@ router.get('/team/:id', playerController.getAllPlayersByTeamId);
  *         required: true
  *         schema:
  *           type: string
- *         example: "Midfielder"
+ *         description: Player position
  *     responses:
  *       200:
  *         description: List of players in the given position
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Player'
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 position:
+ *                   type: string
  *       500:
  *         description: Server error
  */
@@ -193,10 +327,26 @@ router.get('/position/:position', playerController.getAllPlayersByPosition);
  *         required: true
  *         schema:
  *           type: string
- *         example: "Messi"
+ *         description: Player name to search for
  *     responses:
  *       200:
  *         description: List of players matching the name
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Player'
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 name:
+ *                   type: string
+ *       404:
+ *         description: No players found
  *       500:
  *         description: Server error
  */

@@ -1,4 +1,5 @@
 const Team = require('../../models/match/Team.model');
+const { deleteObject } = require('../../config/aws.config');
 
 const teamCtrl = {
   // Create a new team
@@ -8,7 +9,7 @@ const teamCtrl = {
       await newTeam.save();
       res.status(201).json({ message: 'Team created successfully', team: newTeam });
     } catch (error) {
-      console.log(error)
+      console.log(error);
       res.status(500).json({ message: 'Error creating team', error: error });
     }
   },
@@ -22,7 +23,7 @@ const teamCtrl = {
 
       let query = Team.find();
 
-      // 🔍 Add search condition if provided
+      // Add search condition if provided
       if (search) {
         query = query.find({
           name: { $regex: search, $options: 'i' } // Case-insensitive search
@@ -62,57 +63,49 @@ const teamCtrl = {
     }
   },
 
-  // Update a team by ID
+  // Update a team
   updateTeam: async (req, res) => {
-    const { id } = req.params;
     try {
-      const updatedTeam = await Team.findByIdAndUpdate(id, req.body, { new: true });
-      if (!updatedTeam) return res.status(404).json({ message: 'Team not found' });
-      res.status(200).json({ message: 'Team updated successfully', team: updatedTeam });
+      const team = await Team.findByIdAndUpdate(req.params.id, req.body, { new: true });
+      if (!team) {
+        return res.status(404).json({ message: 'Team not found' });
+      }
+      res.json({ data: team, status: "success" });
     } catch (error) {
       res.status(500).json({ message: 'Error updating team', error: error.message });
     }
   },
 
-  // Delete a team by ID
+  // Delete a team
   deleteTeam: async (req, res) => {
-    const { id } = req.params;
     try {
-      const deletedTeam = await Team.findByIdAndDelete(id);
-      if (!deletedTeam) return res.status(404).json({ message: 'Team not found' });
-      res.status(200).json({ message: 'Team deleted successfully' });
+      const team = await Team.findByIdAndDelete(req.params.id);
+      if (!team) {
+        return res.status(404).json({ message: 'Team not found' });
+      }
+
+      // Delete team logo from S3 if exists
+      if (team.logo) {
+        try {
+          await deleteObject(team.logo);
+        } catch (err) {
+          console.error("Error deleting team logo from S3:", err);
+        }
+      }
+
+      res.json({ data: team, status: "success" });
     } catch (error) {
       res.status(500).json({ message: 'Error deleting team', error: error.message });
     }
   },
 
-  // Get teams by country with pagination
+  // Get teams by country
   getTeamsByCountry: async (req, res) => {
-    const { country } = req.params;
-    const { page = '1', limit = '10' } = req.query;
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-
     try {
-      const query = { country };
-      const totalTeams = await Team.countDocuments(query);
-      const teams = await Team.find(query)
-        .skip((pageNum - 1) * limitNum)
-        .limit(limitNum)
-        .exec();
-
-      res.status(200).json({
-        message: 'Teams fetched successfully',
-        teams,
-        meta: {
-          currentPage: pageNum,
-          limit: limitNum,
-          total: totalTeams,
-          totalPages: Math.ceil(totalTeams / limitNum),
-        },
-      });
+      const teams = await Team.find({ country: req.params.country });
+      res.json({ data: teams, status: "success" });
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching teams', error: error.message });
+      res.status(500).json({ message: 'Error fetching teams by country', error: error.message });
     }
   },
 

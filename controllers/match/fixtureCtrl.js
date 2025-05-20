@@ -8,8 +8,65 @@ const fixtureCtrl = {
   // GET All Fixtures
   getAllFixtures: async (req, res) => {
     try {
-      const fixtures = await fixtureModel.find().sort({ _id: 1 });
-      res.json({ data: fixtures, status: "success" });
+      const { status, round, teamId, dateFrom, dateTo } = req.query;
+      let query = {};
+
+      // Filter by status
+      if (status) {
+        switch (status) {
+          case 'played':
+            query.statusshort = { $in: ['FT', 'AET', 'PEN'] }; // Finished matches
+            break;
+          case 'upcoming':
+            query.statusshort = { $in: ['NS', 'TBD'] }; // Not started matches
+            break;
+          case 'live':
+            query.statusshort = { $in: ['1H', 'HT', '2H', 'ET', 'P', 'BT'] }; // Live matches
+            break;
+          case 'postponed':
+            query.statusshort = { $in: ['PST', 'CANC'] }; // Postponed/Cancelled matches
+            break;
+          default:
+            query.statusshort = status; // Direct status match
+        }
+      }
+
+      // Filter by round
+      if (round) {
+        query.round = round;
+      }
+
+      // Filter by team
+      if (teamId) {
+        query.$or = [
+          { 'teamshome.id': teamId },
+          { 'teamsaway.id': teamId }
+        ];
+      }
+
+      // Filter by date range
+      if (dateFrom || dateTo) {
+        query.date = {};
+        if (dateFrom) {
+          query.date.$gte = new Date(dateFrom);
+        }
+        if (dateTo) {
+          query.date.$lte = new Date(dateTo);
+        }
+      }
+
+      const fixtures = await fixtureModel.find(query).sort({ date: 1 });
+      res.json({ 
+        data: fixtures, 
+        status: "success",
+        filters: {
+          status,
+          round,
+          teamId,
+          dateFrom,
+          dateTo
+        }
+      });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

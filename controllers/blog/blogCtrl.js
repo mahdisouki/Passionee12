@@ -1,4 +1,5 @@
 const BlogModel = require("../../models/utils/blogModels");
+const { deleteObject } = require('../../config/aws.config');
 
 const blogCtrl = {
   
@@ -45,6 +46,19 @@ const blogCtrl = {
   deleteBlog: async (req, res) => {
     try {
       const blog = await BlogModel.findByIdAndDelete(req.params.id);
+      if (!blog) {
+        return res.status(404).json({ error: "Blog not found" });
+      }
+
+      // Delete blog logo from S3 if exists
+      if (blog.logo) {
+        try {
+          await deleteObject(blog.logo);
+        } catch (err) {
+          console.error("Error deleting blog logo from S3:", err);
+        }
+      }
+
       res.json({ data: blog, status: "success" });
     } catch (err) {
       res.status(500).json({ error: err.message });
