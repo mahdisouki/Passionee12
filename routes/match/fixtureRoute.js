@@ -1,52 +1,107 @@
 const express = require('express');
 const router = express.Router();
 const fixtureController = require('../../controllers/match/fixtureCtrl');
+const { AuthMiddleware } = require('../../shared/authMiddleware');
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Fixture:
+ *       type: object
+ *       required:
+ *         - homeTeam
+ *         - awayTeam
+ *         - date
+ *         - status
+ *       properties:
+ *         _id:
+ *           type: string
+ *           description: The fixture ID
+ *         homeTeam:
+ *           type: string
+ *           description: ID of the home team
+ *         awayTeam:
+ *           type: string
+ *           description: ID of the away team
+ *         date:
+ *           type: string
+ *           format: date-time
+ *           description: Date and time of the fixture
+ *         status:
+ *           type: string
+ *           enum: [scheduled, live, completed, postponed]
+ *           description: Current status of the fixture
+ *         score:
+ *           type: object
+ *           properties:
+ *             home:
+ *               type: number
+ *               description: Home team score
+ *             away:
+ *               type: number
+ *               description: Away team score
+ *         round:
+ *           type: string
+ *           description: Round or stage of the competition
+ *         venue:
+ *           type: string
+ *           description: Stadium or venue name
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *           description: Creation timestamp
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *           description: Last update timestamp
+ */
 
 /**
  * @swagger
  * tags:
  *   name: Fixtures
- *   description: Match fixture management APIs
+ *   description: Fixture management APIs
  */
 
 /**
  * @swagger
  * /fixture:
  *   get:
- *     summary: Get all fixtures with optional filters
+ *     summary: Get all fixtures
  *     tags: [Fixtures]
  *     parameters:
  *       - in: query
  *         name: status
  *         schema:
  *           type: string
- *           enum: [played, upcoming, live, postponed]
+ *           enum: [scheduled, live, completed, postponed]
  *         description: Filter fixtures by status
  *       - in: query
  *         name: round
  *         schema:
  *           type: string
- *         description: Filter fixtures by round name
+ *         description: Filter fixtures by round
  *       - in: query
  *         name: teamId
  *         schema:
  *           type: string
  *         description: Filter fixtures by team ID
  *       - in: query
- *         name: dateFrom
+ *         name: startDate
  *         schema:
  *           type: string
  *           format: date
  *         description: Filter fixtures from this date
  *       - in: query
- *         name: dateTo
+ *         name: endDate
  *         schema:
  *           type: string
  *           format: date
  *         description: Filter fixtures until this date
  *     responses:
  *       200:
- *         description: List of filtered fixtures
+ *         description: List of fixtures
  *         content:
  *           application/json:
  *             schema:
@@ -58,19 +113,7 @@ const fixtureController = require('../../controllers/match/fixtureCtrl');
  *                     $ref: '#/components/schemas/Fixture'
  *                 status:
  *                   type: string
- *                 filters:
- *                   type: object
- *                   properties:
- *                     status:
- *                       type: string
- *                     round:
- *                       type: string
- *                     teamId:
- *                       type: string
- *                     dateFrom:
- *                       type: string
- *                     dateTo:
- *                       type: string
+ *                   example: success
  *       500:
  *         description: Server error
  */
@@ -137,17 +180,81 @@ router.get('/team/:id', fixtureController.getAllFixtureByIdTeam);
  * @swagger
  * /fixture:
  *   post:
- *     summary: Create a new fixture
+ *     summary: Create new fixture
  *     tags: [Fixtures]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - homeTeam
+ *               - awayTeam
+ *               - date
+ *             properties:
+ *               homeTeam:
+ *                 type: string
+ *               awayTeam:
+ *                 type: string
+ *               date:
+ *                 type: string
+ *                 format: date-time
+ *               round:
+ *                 type: string
+ *               venue:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Fixture created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Fixture'
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *       400:
+ *         description: Invalid input
+ *       500:
+ *         description: Server error
  */
-router.post('/', fixtureController.createFixture);
+router.post('/', AuthMiddleware, fixtureController.createFixture);
 
 /**
  * @swagger
  * /fixture/{id}:
  *   get:
- *     summary: Get a fixture by ID
+ *     summary: Get fixture by ID
  *     tags: [Fixtures]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Fixture details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Fixture'
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *       404:
+ *         description: Fixture not found
+ *       500:
+ *         description: Server error
  */
 router.get('/:id', fixtureController.getFixtureById);
 
@@ -155,19 +262,93 @@ router.get('/:id', fixtureController.getFixtureById);
  * @swagger
  * /fixture/{id}:
  *   put:
- *     summary: Update a fixture
+ *     summary: Update fixture
  *     tags: [Fixtures]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               date:
+ *                 type: string
+ *                 format: date-time
+ *               status:
+ *                 type: string
+ *                 enum: [scheduled, live, completed, postponed]
+ *               score:
+ *                 type: object
+ *                 properties:
+ *                   home:
+ *                     type: number
+ *                   away:
+ *                     type: number
+ *               round:
+ *                 type: string
+ *               venue:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Fixture updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   $ref: '#/components/schemas/Fixture'
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *       404:
+ *         description: Fixture not found
+ *       500:
+ *         description: Server error
  */
-router.put('/:id', fixtureController.updateFixture);
+router.put('/:id', AuthMiddleware, fixtureController.updateFixture);
 
 /**
  * @swagger
  * /fixture/{id}:
  *   delete:
- *     summary: Delete a fixture
+ *     summary: Delete fixture
  *     tags: [Fixtures]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Fixture deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Fixture deleted successfully
+ *       404:
+ *         description: Fixture not found
+ *       500:
+ *         description: Server error
  */
-router.delete('/:id', fixtureController.deleteFixture);
+router.delete('/:id', AuthMiddleware, fixtureController.deleteFixture);
 
 /**
  * @swagger

@@ -16,7 +16,7 @@ const options = {
       },
     ],
   },
-  apis: ["./routes/auth/authRoutes.js","./routes/match/playerRoute.js", "./routes/match/teamRoute.js","./routes/match/fixtureRoute.js","./routes/match/pickteamRoute.js"], // Paths to your route files
+  apis: ["./routes/auth/authRoutes.js","./routes/match/playerRoute.js", "./routes/match/teamRoute.js","./routes/match/fixtureRoute.js","./routes/match/pickteamRoute.js" , "./routes/utils/carouselRoute.js" ], // Paths to your route files
 };
 
 const swaggerSpec = swaggerJsdoc(options);

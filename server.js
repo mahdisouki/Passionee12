@@ -32,7 +32,7 @@ const sidebarRoutes = require('./routes/sidebar/sidebarRoute');
 const matchEventRoutes = require('./routes/match/matchEventsRoutes');
 const standingRoutes = require('./routes/match/standingRoute');
 const classementRoutes = require('./routes/classement/classementRoute');
-
+const carouselRoutes = require('./routes/utils/carouselRoute');
 app.use('/auth', authRoutes);
 app.use('/team', teamRoutes);
 app.use('/player', playerRoutes);
@@ -45,6 +45,7 @@ app.use('/sidebar', sidebarRoutes);
 app.use('/match-events', matchEventRoutes);
 app.use('/standing', standingRoutes);
 app.use('/classement', classementRoutes);
+app.use('/carousel', carouselRoutes);
 setupSwagger(app); // Initialize Swagger documentation
 
 app.listen(5000, () => console.log('Server running on port 5000'));

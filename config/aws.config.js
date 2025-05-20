@@ -1,4 +1,19 @@
 const AWS = require('aws-sdk');
+require('dotenv').config();
+
+// Validate required environment variables
+const requiredEnvVars = [
+  'AWS_ACCESS_KEY_ID',
+  'AWS_SECRET_ACCESS_KEY',
+  'AWS_REGION',
+  'AWS_S3_BUCKET'
+];
+
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+  console.error('Missing required AWS environment variables:', missingEnvVars.join(', '));
+  process.exit(1);
+}
 
 // AWS Configuration
 AWS.config.update({
@@ -51,13 +66,16 @@ const uploadFile = (file, objectKey) => {
       Key: objectKey,
       Body: file.buffer,
       ContentType: file.mimetype,
+      ACL: 'public-read' // Make the file publicly accessible
     };
 
     s3.upload(params, (err, data) => {
       if (err) {
+        console.error('Error uploading to S3:', err);
         reject(err);
       } else {
-        resolve(objectKey);
+        // Return the full URL of the uploaded file
+        resolve(data.Location);
       }
     });
   });
