@@ -11,7 +11,7 @@ const fixtureController = require('../../controllers/match/fixtureCtrl');
 
 /**
  * @swagger
- * /fixtures:
+ * /fixture:
  *   get:
  *     summary: Get all fixtures with optional filters
  *     tags: [Fixtures]
@@ -78,7 +78,7 @@ router.get('/', fixtureController.getAllFixtures);
 
 /**
  * @swagger
- * /fixtures/status/{status}:
+ * /fixture/status/{status}:
  *   get:
  *     summary: Get fixtures by match status
  *     tags: [Fixtures]
@@ -99,7 +99,7 @@ router.get('/status/:status', fixtureController.getAllFixtureByStatusShort);
 
 /**
  * @swagger
- * /fixtures/round/{roundName}:
+ * /fixture/round/{roundName}:
  *   get:
  *     summary: Get fixtures by round name
  *     tags: [Fixtures]
@@ -108,7 +108,7 @@ router.get('/round/:roundName', fixtureController.getAllFixtureByRoundName);
 
 /**
  * @swagger
- * /fixtures/last-round:
+ * /fixture/last-round:
  *   get:
  *     summary: Get the last played round
  *     tags: [Fixtures]
@@ -117,7 +117,7 @@ router.get('/last-round', fixtureController.getLastCurrentRound);
 
 /**
  * @swagger
- * /fixtures/next-round:
+ * /fixture/next-round:
  *   get:
  *     summary: Get the next match round
  *     tags: [Fixtures]
@@ -126,7 +126,7 @@ router.get('/next-round', fixtureController.getNextRound);
 
 /**
  * @swagger
- * /fixtures/team/{id}:
+ * /fixture/team/{id}:
  *   get:
  *     summary: Get fixtures by team ID
  *     tags: [Fixtures]
@@ -135,7 +135,7 @@ router.get('/team/:id', fixtureController.getAllFixtureByIdTeam);
 
 /**
  * @swagger
- * /fixtures:
+ * /fixture:
  *   post:
  *     summary: Create a new fixture
  *     tags: [Fixtures]
@@ -144,7 +144,7 @@ router.post('/', fixtureController.createFixture);
 
 /**
  * @swagger
- * /fixtures/{id}:
+ * /fixture/{id}:
  *   get:
  *     summary: Get a fixture by ID
  *     tags: [Fixtures]
@@ -153,7 +153,7 @@ router.get('/:id', fixtureController.getFixtureById);
 
 /**
  * @swagger
- * /fixtures/{id}:
+ * /fixture/{id}:
  *   put:
  *     summary: Update a fixture
  *     tags: [Fixtures]
@@ -162,7 +162,7 @@ router.put('/:id', fixtureController.updateFixture);
 
 /**
  * @swagger
- * /fixtures/{id}:
+ * /fixture/{id}:
  *   delete:
  *     summary: Delete a fixture
  *     tags: [Fixtures]
@@ -171,7 +171,7 @@ router.delete('/:id', fixtureController.deleteFixture);
 
 /**
  * @swagger
- * /fixtures/{id}/status:
+ * /fixture/{id}/status:
  *   put:
  *     summary: Update fixture status
  *     tags: [Fixtures]
@@ -180,7 +180,7 @@ router.put('/:id/status', fixtureController.updateStatus);
 
 /**
  * @swagger
- * /fixtures/{id}/score:
+ * /fixture/{id}/score:
  *   put:
  *     summary: Update fixture score
  *     tags: [Fixtures]
@@ -189,7 +189,7 @@ router.put('/:id/score', fixtureController.updateScore);
 
 /**
  * @swagger
- * /fixtures/modify-id:
+ * /fixture/modify-id:
  *   put:
  *     summary: Generate and modify fixture IDs
  *     tags: [Fixtures]
@@ -198,7 +198,7 @@ router.put('/modify-id', fixtureController.modifid);
 
 /**
  * @swagger
- * /fixtures/nearest-match/{teamId}:
+ * /fixture/nearest-match/{teamId}:
  *   get:
  *     summary: Get the nearest upcoming match for a team
  *     tags: [Fixtures]
