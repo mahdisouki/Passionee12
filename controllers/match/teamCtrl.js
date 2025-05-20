@@ -1,16 +1,22 @@
 const Team = require('../../models/match/Team.model');
-const { deleteObject } = require('../../config/aws.config');
+const cloudinary = require('../../helper/cloudinaryConfig');
 
 const teamCtrl = {
   // Create a new team
   createTeam: async (req, res) => {
     try {
-      const newTeam = new Team(req.body);
-      await newTeam.save();
-      res.status(201).json({ message: 'Team created successfully', team: newTeam });
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: 'Error creating team', error: error });
+      const teamData = { ...req.body };
+      
+      // If a file was uploaded, use the Cloudinary URL
+      if (req.file) {
+        teamData.logo = req.file.url;
+      }
+
+      const team = await Team.create(teamData);
+      res.status(201).json({ data: team, status: "success" });
+    } catch (err) {
+      console.error('Error creating team:', err);
+      res.status(500).json({ error: err.message });
     }
   },
 
@@ -53,26 +59,53 @@ const teamCtrl = {
 
   // Get a single team by ID
   getTeamById: async (req, res) => {
-    const { id } = req.params;
     try {
-      const team = await Team.findById(id);
-      if (!team) return res.status(404).json({ message: 'Team not found' });
-      res.status(200).json(team);
-    } catch (error) {
-      res.status(500).json({ message: 'Error fetching team', error: error.message });
+      const team = await Team.findById(req.params.id);
+      if (!team) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      res.json({ data: team, status: "success" });
+    } catch (err) {
+      console.error('Error getting team:', err);
+      res.status(500).json({ error: err.message });
     }
   },
 
   // Update a team
   updateTeam: async (req, res) => {
     try {
-      const team = await Team.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      if (!team) {
-        return res.status(404).json({ message: 'Team not found' });
+      const teamData = { ...req.body };
+      
+      // If a new file was uploaded
+      if (req.file) {
+        // Delete old image from Cloudinary if exists
+        const oldTeam = await Team.findById(req.params.id);
+        if (oldTeam && oldTeam.logo) {
+          try {
+            const publicId = oldTeam.logo.split('/').pop().split('.')[0];
+            await cloudinary.uploader.destroy(publicId);
+          } catch (err) {
+            console.error('Error deleting old team logo from Cloudinary:', err);
+          }
+        }
+        
+        // Set new image URL
+        teamData.logo = req.file.url;
       }
-      res.json({ data: team, status: "success" });
-    } catch (error) {
-      res.status(500).json({ message: 'Error updating team', error: error.message });
+
+      const updatedTeam = await Team.findByIdAndUpdate(
+        req.params.id, 
+        teamData, 
+        { new: true }
+      );
+
+      if (!updatedTeam) {
+        return res.status(404).json({ error: "Team not found" });
+      }
+      res.json({ data: updatedTeam, status: "success" });
+    } catch (err) {
+      console.error('Error updating team:', err);
+      res.status(500).json({ error: err.message });
     }
   },
 
@@ -81,21 +114,22 @@ const teamCtrl = {
     try {
       const team = await Team.findByIdAndDelete(req.params.id);
       if (!team) {
-        return res.status(404).json({ message: 'Team not found' });
+        return res.status(404).json({ error: "Team not found" });
       }
 
-      // Delete team logo from S3 if exists
+      // Delete team logo from Cloudinary if exists
       if (team.logo) {
         try {
-          await deleteObject(team.logo);
+          const publicId = team.logo.split('/').pop().split('.')[0];
+          await cloudinary.uploader.destroy(publicId);
         } catch (err) {
-          console.error("Error deleting team logo from S3:", err);
+          console.error("Error deleting team logo from Cloudinary:", err);
         }
       }
-
       res.json({ data: team, status: "success" });
-    } catch (error) {
-      res.status(500).json({ message: 'Error deleting team', error: error.message });
+    } catch (err) {
+      console.error('Error deleting team:', err);
+      res.status(500).json({ error: err.message });
     }
   },
 
