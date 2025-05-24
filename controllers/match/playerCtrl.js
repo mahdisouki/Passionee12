@@ -1,6 +1,6 @@
 const Player = require("../../models/match/Player.model");
 const cloudinary = require('../../helper/cloudinaryConfig');
-
+const Pickteam = require('../../models/match/Pickteams.model')
 const calculateSelectedBy = async (playerId) => {
     const totalPickteams = await Pickteam.countDocuments(); // Total number of teams in the competition
     const selectedPickteams = await Pickteam.countDocuments({ 'players.player': playerId }); // Teams that selected this player

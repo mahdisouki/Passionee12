@@ -15,7 +15,7 @@ const { AuthMiddleware } = require('../../shared/authMiddleware');
  *       properties:
  *         url:
  *           type: string
- *           description: S3 URL of the image
+ *           description: URL of the image
  *         title:
  *           type: string
  *           description: Title or caption for the image
@@ -120,7 +120,7 @@ const { AuthMiddleware } = require('../../shared/authMiddleware');
  *       500:
  *         description: Server error
  */
-router.post('/',upload.array('images'), handleFileUpload, carouselCtrl.createCarousel);
+router.post('/', AuthMiddleware, upload.array('images'), handleFileUpload, carouselCtrl.createCarousel);
 
 /**
  * @swagger

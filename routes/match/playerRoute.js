@@ -87,7 +87,7 @@ const { AuthMiddleware } = require('../../shared/authMiddleware');
  *       500:
  *         description: Server error
  */
-router.post('/', AuthMiddleware, upload.single('logo'), handleFileUpload, playerController.createPlayer);
+router.post('/', upload.single('logo'), handleFileUpload, playerController.createPlayer);
 
 /**
  * @swagger

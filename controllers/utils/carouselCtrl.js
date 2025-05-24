@@ -11,7 +11,8 @@ const carouselCtrl = {
             // Validate type
             if (!['home', 'sponsors'].includes(type)) {
                 return res.status(400).json({ 
-                    error: 'Invalid carousel type. Must be either "home" or "sponsors"' 
+                    status: "error",
+                    message: 'Invalid carousel type. Must be either "home" or "sponsors"' 
                 });
             }
 
@@ -19,58 +20,80 @@ const carouselCtrl = {
             const existingCarousel = await Carousel.findOne({ type });
             if (existingCarousel) {
                 return res.status(400).json({ 
-                    error: `A carousel of type "${type}" already exists` 
+                    status: "error",
+                    message: `A carousel of type "${type}" already exists` 
                 });
             }
 
             // Validate files
             if (!files || files.length === 0) {
                 return res.status(400).json({ 
-                    error: 'At least one image is required' 
+                    status: "error",
+                    message: 'At least one image is required' 
                 });
             }
 
             // Process uploaded files
-            const images = files.map((file, index) => {
+            const images = await Promise.all(files.map(async (file, index) => {
                 // Get title and link from form data
                 const title = req.body[`title_${index}`] || '';
                 const link = req.body[`link_${index}`] || '';
 
+                // Upload to Cloudinary if not already uploaded
+                let imageUrl = file.url;
+                if (!imageUrl && file.path) {
+                    const result = await cloudinary.uploader.upload(file.path, {
+                        folder: `carousels/${type}`,
+                        resource_type: "auto"
+                    });
+                    imageUrl = result.secure_url;
+                }
+
                 return {
-                    url: file.url, // Cloudinary URL
+                    url: imageUrl,
                     title,
                     link,
                     order: index
                 };
-            });
+            }));
 
             const carousel = new Carousel({
                 type,
-                images
+                images,
+                isActive: true
             });
 
             await carousel.save();
             res.status(201).json({ 
-                data: carousel, 
                 status: "success",
-                message: `${type} carousel created successfully` 
+                message: `${type} carousel created successfully`,
+                data: carousel
             });
         } catch (err) {
             console.error('Error creating carousel:', err);
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ 
+                status: "error",
+                message: err.message || 'Error creating carousel'
+            });
         }
     },
 
     // Get all carousels
     getAllCarousels: async (req, res) => {
         try {
-            const carousels = await Carousel.find().sort({ type: 1 });
+            const carousels = await Carousel.find()
+                .sort({ type: 1, 'images.order': 1 })
+                .select('-__v');
+            
             res.json({ 
-                data: carousels, 
-                status: "success" 
+                status: "success",
+                data: carousels
             });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ 
+                status: "error",
+                message: err.message || 'Error fetching carousels'
+            });
         }
     },
 
@@ -78,20 +101,25 @@ const carouselCtrl = {
     getCarouselByType: async (req, res) => {
         try {
             const { type } = req.params;
-            const carousel = await Carousel.findOne({ type });
+            const carousel = await Carousel.findOne({ type })
+                .select('-__v');
             
-            if (!carousel) {
-                return res.status(404).json({ 
-                    error: `No carousel found for type "${type}"` 
-                });
-            }
+            // if (!carousel) {
+            //     return res.status(404).json({ 
+            //         status: "error",
+            //         message: `No carousel found for type "${type}"` 
+            //     });
+            // }
 
             res.json({ 
-                data: carousel, 
-                status: "success" 
+                status: "success",
+                data: carousel
             });
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ 
+                status: "error",
+                message: err.message || 'Error fetching carousel'
+            });
         }
     },
 
@@ -105,7 +133,8 @@ const carouselCtrl = {
             const carousel = await Carousel.findOne({ type });
             if (!carousel) {
                 return res.status(404).json({ 
-                    error: `No carousel found for type "${type}"` 
+                    status: "error",
+                    message: `No carousel found for type "${type}"` 
                 });
             }
 
@@ -124,17 +153,27 @@ const carouselCtrl = {
                 }
 
                 // Process new images
-                carousel.images = files.map((file, index) => {
+                carousel.images = await Promise.all(files.map(async (file, index) => {
                     const title = req.body[`title_${index}`] || '';
                     const link = req.body[`link_${index}`] || '';
 
+                    // Upload to Cloudinary if not already uploaded
+                    let imageUrl = file.url;
+                    if (!imageUrl && file.path) {
+                        const result = await cloudinary.uploader.upload(file.path, {
+                            folder: `carousels/${type}`,
+                            resource_type: "auto"
+                        });
+                        imageUrl = result.secure_url;
+                    }
+
                     return {
-                        url: file.url, // Cloudinary URL
+                        url: imageUrl,
                         title,
                         link,
                         order: index
                     };
-                });
+                }));
             }
 
             // Update isActive if provided
@@ -144,13 +183,16 @@ const carouselCtrl = {
 
             await carousel.save();
             res.json({ 
-                data: carousel, 
                 status: "success",
-                message: `${type} carousel updated successfully` 
+                message: `${type} carousel updated successfully`,
+                data: carousel
             });
         } catch (err) {
             console.error('Error updating carousel:', err);
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ 
+                status: "error",
+                message: err.message || 'Error updating carousel'
+            });
         }
     },
 
@@ -163,20 +205,32 @@ const carouselCtrl = {
 
             if (!file) {
                 return res.status(400).json({ 
-                    error: 'No image file provided' 
+                    status: "error",
+                    message: 'No image file provided' 
                 });
             }
 
             const carousel = await Carousel.findOne({ type });
             if (!carousel) {
                 return res.status(404).json({ 
-                    error: `No carousel found for type "${type}"` 
+                    status: "error",
+                    message: `No carousel found for type "${type}"` 
                 });
+            }
+
+            // Upload to Cloudinary if not already uploaded
+            let imageUrl = file.url;
+            if (!imageUrl && file.path) {
+                const result = await cloudinary.uploader.upload(file.path, {
+                    folder: `carousels/${type}`,
+                    resource_type: "auto"
+                });
+                imageUrl = result.secure_url;
             }
 
             // Add new image at the end
             carousel.images.push({
-                url: file.url, // Cloudinary URL
+                url: imageUrl,
                 title: title || '',
                 link: link || '',
                 order: carousel.images.length
@@ -184,13 +238,16 @@ const carouselCtrl = {
 
             await carousel.save();
             res.json({ 
-                data: carousel, 
                 status: "success",
-                message: "Image added successfully" 
+                message: "Image added successfully",
+                data: carousel
             });
         } catch (err) {
             console.error('Error adding image:', err);
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ 
+                status: "error",
+                message: err.message || 'Error adding image'
+            });
         }
     },
 
@@ -200,10 +257,18 @@ const carouselCtrl = {
             const { type } = req.params;
             const { imageUrl } = req.body;
 
+            if (!imageUrl) {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Image URL is required"
+                });
+            }
+
             const carousel = await Carousel.findOne({ type });
             if (!carousel) {
                 return res.status(404).json({ 
-                    error: `No carousel found for type "${type}"` 
+                    status: "error",
+                    message: `No carousel found for type "${type}"` 
                 });
             }
 
@@ -211,7 +276,8 @@ const carouselCtrl = {
             const imageIndex = carousel.images.findIndex(img => img.url === imageUrl);
             if (imageIndex === -1) {
                 return res.status(404).json({ 
-                    error: "Image not found in carousel" 
+                    status: "error",
+                    message: "Image not found in carousel" 
                 });
             }
 
@@ -232,13 +298,16 @@ const carouselCtrl = {
 
             await carousel.save();
             res.json({ 
-                data: carousel, 
                 status: "success",
-                message: "Image removed successfully" 
+                message: "Image removed successfully",
+                data: carousel
             });
         } catch (err) {
             console.error('Error removing image:', err);
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ 
+                status: "error",
+                message: err.message || 'Error removing image'
+            });
         }
     },
 
@@ -246,12 +315,20 @@ const carouselCtrl = {
     reorderImages: async (req, res) => {
         try {
             const { type } = req.params;
-            const { imageOrder } = req.body; // Array of image URLs in new order
+            const { imageOrder } = req.body;
+
+            if (!Array.isArray(imageOrder)) {
+                return res.status(400).json({
+                    status: "error",
+                    message: "Image order must be an array"
+                });
+            }
 
             const carousel = await Carousel.findOne({ type });
             if (!carousel) {
                 return res.status(404).json({ 
-                    error: `No carousel found for type "${type}"` 
+                    status: "error",
+                    message: `No carousel found for type "${type}"` 
                 });
             }
 
@@ -271,13 +348,16 @@ const carouselCtrl = {
             await carousel.save();
 
             res.json({ 
-                data: carousel, 
                 status: "success",
-                message: "Images reordered successfully" 
+                message: "Images reordered successfully",
+                data: carousel
             });
         } catch (err) {
             console.error('Error reordering images:', err);
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ 
+                status: "error",
+                message: err.message || 'Error reordering images'
+            });
         }
     },
 
@@ -289,7 +369,8 @@ const carouselCtrl = {
             
             if (!carousel) {
                 return res.status(404).json({ 
-                    error: `No carousel found for type "${type}"` 
+                    status: "error",
+                    message: `No carousel found for type "${type}"` 
                 });
             }
 
@@ -308,11 +389,14 @@ const carouselCtrl = {
             await Carousel.deleteOne({ type });
             res.json({ 
                 status: "success",
-                message: `${type} carousel deleted successfully` 
+                message: `${type} carousel deleted successfully`
             });
         } catch (err) {
             console.error('Error deleting carousel:', err);
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ 
+                status: "error",
+                message: err.message || 'Error deleting carousel'
+            });
         }
     }
 };

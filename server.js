@@ -7,14 +7,15 @@ const bodyParser = require('body-parser');
 const cors = require('cors')
 const setupSwagger = require("./swaggerConfig"); // Import Swagger setup
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "1gb" }));
 app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ limit: "1gb  ", extended: true }));
 const corsOptions = {
-    origin: ['*' , 'http://localhost:5173'], 
-    optionsSuccessStatus: 200 
-  };
+  origin: ["*", "http://localhost:5173"],
+  optionsSuccessStatus: 200,
+};
 app.use(cors(corsOptions))
+
 app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
