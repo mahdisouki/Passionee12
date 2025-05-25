@@ -20,40 +20,12 @@ const matchSchema = new Schema({
         required: true
     },
     teamshome: {
-        _id: {
             type: Schema.Types.ObjectId,
             ref: 'Team'
-        },
-        id: {
-            type: Number,
-        },
-        code: {
-            type: String
-        },
-        name: {
-            type: String
-        },
-        logo: {
-            type: String
-        },
     },
     teamsaway: {
-        _id: {
             type: Schema.Types.ObjectId,
             ref: 'Team'
-        },
-        id: {
-            type: Number,
-        },
-        code: {
-            type: String
-        },
-        name: {
-            type: String
-        },
-        logo: {
-            type: String
-        },
     },
     statuslong: {
         type: String,
