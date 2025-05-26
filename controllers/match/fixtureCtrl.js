@@ -39,8 +39,8 @@ const fixtureCtrl = {
       // Filter by team
       if (teamId) {
         query.$or = [
-          { 'teamshome.id': teamId },
-          { 'teamsaway.id': teamId }
+          { 'teamshome': teamId },
+          { 'teamsaway': teamId }
         ];
       }
 
@@ -55,7 +55,7 @@ const fixtureCtrl = {
         }
       }
 
-      const fixtures = await fixtureModel.find(query).sort({ date: 1 });
+      const fixtures = await fixtureModel.find(query).sort({ date: 1 }).populate('teamshome', 'name id').populate('teamsaway', 'name id');
       res.json({ 
         data: fixtures, 
         status: "success",
@@ -129,7 +129,7 @@ const fixtureCtrl = {
 
   getFixtureById: async (req, res) => {
     try {
-      const fixture = await fixtureModel.findById(req.params.id);
+      const fixture = await fixtureModel.findById(req.params.id).populate('teamshome', 'name id').populate('teamsaway', 'name id');
       res.json({ data: fixture, status: "success" });
     } catch (err) {
       res.status(500).json({ error: err.message });
