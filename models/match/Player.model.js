@@ -2,26 +2,9 @@ const { Schema, mongoose } = require('mongoose')
 
 const PlayerSchema = new Schema({
     team: {
-        _id: {
             type: Schema.Types.ObjectId,
             ref: 'Team',
             required: true
-        },
-        id: {
-            type: Number,
-        },
-        code: {
-            type: String,
-            required: true
-        },
-        name: {
-            type: String,
-            required: true
-        },
-        logo: {
-            type: String,
-            required: true
-        },
     },
     nationality: { type: String },
     dateOfBirth: { type: Date },
