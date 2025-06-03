@@ -351,11 +351,11 @@ const { AuthMiddleware } = require('../../shared/authMiddleware');
  */
 
 // Routes
-router.post("/", AuthMiddleware, upload.single('logo'), handleFileUpload, blogCtrl.createBlog);
+router.post("/", upload.single('logo'), handleFileUpload, blogCtrl.createBlog);
 router.get("/", blogCtrl.getAllBlogs);
 router.get("/:id", blogCtrl.getBlogById);
-router.put("/:id", AuthMiddleware, upload.single('logo'), handleFileUpload, blogCtrl.updateBlog);
-router.delete("/:id", AuthMiddleware, handleFileDeletion, blogCtrl.deleteBlog);
+router.put("/:id",  upload.single('logo'), handleFileUpload, blogCtrl.updateBlog);
+router.delete("/:id",  handleFileDeletion, blogCtrl.deleteBlog);
 router.post("/:id/views", blogCtrl.incrementViews);
 router.post("/:id/comments", blogCtrl.addComment);
 
