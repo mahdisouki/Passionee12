@@ -10,13 +10,34 @@ const playerCtrl = {
     // Get all players
     getAllPlayers: async (req, res) => {
         try {
-            const players = await Player.find().populate('team');
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+            const skip = (page - 1) * limit;
+
+            // Get total count
+            const total = await Player.countDocuments();
+
+            // Get paginated players
+            const players = await Player.find()
+                .skip(skip)
+                .limit(limit)
+                .populate('team');
+
             const playersWithSelectedBy = await Promise.all(players.map(async (player) => {
                 const selectedBy = await calculateSelectedBy(player._id);
                 return { ...player._doc, selectedBy: `${selectedBy}%` }; // Add selectedBy field to each player
             }));
 
-            res.json({ data: playersWithSelectedBy, status: "success" });
+            res.json({ 
+                data: playersWithSelectedBy, 
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    pages: Math.ceil(total / limit)
+                },
+                status: "success" 
+            });
         } catch (err) {
             console.error('Error getting players:', err);
             res.status(500).json({ error: err.message });

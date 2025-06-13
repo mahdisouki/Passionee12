@@ -9,6 +9,9 @@ const fixtureCtrl = {
   getAllFixtures: async (req, res) => {
     try {
       const { status, round, teamId, dateFrom, dateTo } = req.query;
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 2;
+      const skip = (page - 1) * limit;
       let query = {};
 
       // Filter by status
@@ -55,9 +58,24 @@ const fixtureCtrl = {
         }
       }
 
-      const fixtures = await fixtureModel.find(query).sort({ date: 1 }).populate('teamshome', 'name id').populate('teamsaway', 'name id');
+      // Get total count
+      const total = await fixtureModel.countDocuments(query);
+
+      const fixtures = await fixtureModel.find(query)
+        .sort({ date: 1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('teamshome', 'name id')
+        .populate('teamsaway', 'name id');
+
       res.json({ 
         data: fixtures, 
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
+        },
         status: "success",
         filters: {
           status,
