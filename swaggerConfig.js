@@ -14,9 +14,12 @@ const options = {
       {
         url: "http://localhost:5000", // Update with your actual server URL
       },
+      {
+        url: "https://api.staging.passione12.com/", // dev mode URL
+      },
     ],
   },
-  apis: ["./routes/auth/authRoutes.js","./routes/match/playerRoute.js", "./routes/match/teamRoute.js","./routes/match/fixtureRoute.js","./routes/match/pickteamRoute.js" , "./routes/utils/carouselRoute.js" ], // Paths to your route files
+  apis: ["./routes/auth/authRoutes.js", "./routes/match/playerRoute.js", "./routes/match/teamRoute.js", "./routes/match/fixtureRoute.js", "./routes/match/pickteamRoute.js", "./routes/utils/carouselRoute.js", "./routes/utils/blogRoutes.js"], // Paths to your route files
 };
 
 const swaggerSpec = swaggerJsdoc(options);
